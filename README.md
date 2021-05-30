@@ -1,3 +1,34 @@
+# 针对 LCSTS 的数据预处理
+
+执行如下命令可以对 LCSTS 的数据进行处理
+
+```
+python2 data/make_datafiles_lcsts_remake.py /DATASETS/datasets/LCSTS_ORIGIN/DATA/
+```
+
+文件默认输出于 `finaldata_files` 中，若要修改文件输出位置可以在 `data/make_datafiles.py` 中修改变量 `finished_files_dir`
+
+## 针对中文的特殊处理
+
+- 为了避免 pyrouge 无法处理中文内容，将中文转换为了整数，不同字/词间用空格隔开。在 `make_datafiles_lcsts_remake.py` 中修改变量 `read_charc_type`
+可以控制中文是按照词划分或逐字划分
+
+- 整数与中文对应词典被保存在 `char2int.pkl` `int2cahr.pkl` 中，前者为字典，用于查询文本对应整数；后者为列表，用于查询整数对应文本
+
+- 若希望使用 CoreNLP 做中文分词，需要使用 CoreNLP 的 server 模式，具体操作方法可以参考 [相关文档](https://github.com/nltk/nltk/wiki/Stanford-CoreNLP-API-in-NLTK)
+
+## 其他说明
+
+- 为了尽可能与原本 make_datafiles 兼容，尽可能使用了原本文件中的相关处理函数。但是还是有对该文件做简单修改，可以在该文件中搜索 `modify` 注释信息查看
+
+- 在数据预处理完毕后，需要修改 `scripts` 目录下各脚本中，数据所在位置，并依次执行 selector（train&eval），rewriter，end2end
+
+- 在 end2end 的脚本 `scripts/end2end.sh` 中，注释掉了参数中的预训练模型 checkpoint 路径。这是因为如果不手动指定，模型会选择默认路径下最新的预训练模型
+为了方便调试，在调试过程中注释了相关内容
+
+- `make_datafiles_lcsts_remake.py` 文件中的中文注释内容可能与实际情况不符（尤其是生成器函数）
+
+
 # Unified Summarization
 
 This is the official codes for the paper: [A Unified Model for Extractive and Abstractive Summarization using Inconsistency Loss](https://arxiv.org/abs/1805.06266).
