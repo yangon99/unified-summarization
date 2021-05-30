@@ -10,7 +10,7 @@ int2char = list()
 char2int = dict()
 char2int_index = 1
 
-# LCSTS 三部分
+# LCSTS 数据集中的三部分
 lcsts_train_steps = ['train', 'val', 'test']
 lcsts_valid_counts = [2400591, 10666, 1106]
 file_name_bias = 1
@@ -21,8 +21,8 @@ read_charc_type = "char"  # or word
 
 def read_text_file_lcsts(data_file):
     '''
-        从 LCSTS 文件中读取短文与摘要对，返回一个包含短文与摘要的列表
-        [(文章, 摘要), ...]
+        从 LCSTS 文件中读取短文与摘要对，返回一个包含短文与摘要的元组
+        (文章, 摘要)
     '''
     # all_stories = []
     with open(data_file, 'r') as fp:
@@ -76,7 +76,7 @@ def convert_char_to_int(words_list):
 def tokenize_lcsts(stories_file, tokenized_stories_file, valid_count):
     '''
         使用 CoreNLP 分词或逐字分割 LCSTS 内容
-        与原本预处理方法不同，分词后的内容最终会被存储在同一个文件中，节省开销
+        为了节省硬盘与内存开销，使用了生成器的方式进行处理
     '''
     global read_charc_type
     parser = "char"
@@ -84,7 +84,7 @@ def tokenize_lcsts(stories_file, tokenized_stories_file, valid_count):
         parser = nltk.CoreNLPParser('http://127.0.0.1:9001')
     all_tokenized_stories = list()
 
-    print "Preparing to tokenize %s to %s" % (stories_file, tokenized_stories_file)
+    # print "Preparing to tokenize %s to %s" % (stories_file, tokenized_stories_file)
     all_origin_stories = read_text_file_lcsts(stories_file)
     index = 0
     for (cur_arti, cur_abs) in all_origin_stories:
@@ -104,9 +104,9 @@ def tokenize_lcsts(stories_file, tokenized_stories_file, valid_count):
     #     pk.dump(all_tokenized_stories, output_fp)
     # print "Stanford CoreNLP Tokenizer has finished, files saved in %s" % (tokenized_stories_file)
 
-def write_to_bin_lcsts(train_step, input_file, out_file):
+def write_to_bin_lcsts(train_step, out_file):
     '''
-        从 input_file 读入分词后数据，将其处理后保存在 out_file 中
+        将数据处理后保存在 out_file 中
         当 train_step=="train" 的时候，会创建 vocab 文件
         大部分内容从原始文件中复制
     '''
@@ -115,6 +115,7 @@ def write_to_bin_lcsts(train_step, input_file, out_file):
         makevocab = True
 
     print "Making bin file for %s files" % train_step
+    print "The files will be saved in %s" % out_file
     # story_fnames = os.listdir(train_step)
     # num_stories = len(story_fnames)
 
@@ -133,11 +134,13 @@ def write_to_bin_lcsts(train_step, input_file, out_file):
     # with open(input_file, 'rb') as fp:
     #     all_stories = pk.load(fp)
     # num_stories = len(all_stories)
+    idx = 0
     all_stories = tokenize_lcsts(os.path.join(lcsts_data_dir, data_file_name), os.path.join(lcsts_data_dir, data_file_name + '.tokenized.pkl'), lcsts_valid_counts[_count])
     with open(out_file, 'wb') as writer:
         for s in all_stories:
-            # if idx % 1000 == 0:
-            #     print "Writing story %i of %i; %.2f percent done" % (idx, num_stories, float(idx) * 100.0 / float(num_stories))
+            idx += 1
+            if idx % 1000 == 0:
+                print "Writing story %i of %i; %.2f percent done" % (idx, lcsts_valid_counts[_count], float(idx) * 100.0 / float(lcsts_valid_counts[_count]))
 
             # story_file = os.path.join(train_step, s)
             # Get the strings to write to .bin file
@@ -222,12 +225,14 @@ if __name__ == '__main__':
     # lcsts_valid_counts = [1106]
     # file_name_bias = 3
 
+    if not os.path.exists(finished_files_dir): os.makedirs(finished_files_dir)
+
     # 对 LCSTS 数据集三部分依次进行处理
     # 其中，会针对 train（PART_I）生成字典（vocab）
     for _count, data_part in enumerate(lcsts_train_steps):
         data_file_name = "PART_%s.txt" % ("I" * (_count + file_name_bias))
         # tokenize_lcsts(os.path.join(lcsts_data_dir, data_file_name), os.path.join(lcsts_data_dir, data_file_name + '.tokenized.pkl'), lcsts_valid_counts[_count])
-        write_to_bin_lcsts(data_part, os.path.join(lcsts_data_dir, data_file_name + '.tokenized.pkl'), os.path.join(finished_files_dir, data_part + '.bin'))
+        write_to_bin_lcsts(data_part, os.path.join(finished_files_dir, data_part + '.bin'))
 
     # 保存中文与整数词典
     with open(os.path.join(finished_files_dir, 'char2int.pkl'), 'wb') as output_fp:
@@ -240,5 +245,4 @@ if __name__ == '__main__':
 
     # 按照 make_datafiles.py 中 CHUNK_SIZE，分割 train.bin, val.bin, test.bin
     # 并保存到 finished_files_dir/tra_**.bin 等对应文件中
-    chunk_all()
-
+    # chunk_all()
