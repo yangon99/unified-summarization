@@ -5,4 +5,5 @@
 *finished_files*
 *cnn*
 *dailymail*
-
+*.pkl
+data/test*

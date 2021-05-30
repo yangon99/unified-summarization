@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import os
 import hashlib
@@ -17,6 +18,8 @@ import pdb
 
 dm_single_close_quote = u'\u2019' # unicode
 dm_double_close_quote = u'\u201d'
+# modify-yg: add chinese end_tokens?
+CN_END_TOKENS = ["。", "！", "？", "…", "”", "）"]
 END_TOKENS = ['.', '!', '?', '...', "'", "`", '"', dm_single_close_quote, dm_double_close_quote, ")"] # acceptable ways to end a sentence
 
 # We use these to separate the summary sentences in the .bin datafiles
@@ -123,6 +126,8 @@ def fix_missing_period(line):
   """Adds a period to a line that is missing a period"""
   if "@highlight" in line: return line
   if line=="": return line
+  # modify-yg: maybe we need do this with chinese?
+  if line[-1] in CN_END_TOKENS: return line
   if line[-1] in END_TOKENS: return line
   # print line[-1]
   return line + " ."
@@ -131,7 +136,11 @@ def fix_missing_period(line):
 def get_art_abs(story_file):
   global article_sents_num
 
-  lines = read_text_file(story_file)
+  # modify-yg: if story_file start with "#LCSTS", let lines=story_file
+  if story_file.startswith("#LCSTS"):
+    lines = story_file[6:].split('\n')
+  else:
+    lines = read_text_file(story_file)
 
   # Lowercase everything
   lines = [line.lower() for line in lines]
@@ -193,7 +202,8 @@ def get_extract_summary(article_sents, abstract_sents):
     new_extract_sents = [article_sents[idx] for idx in new_extract_ids]
     _, _, Rouge_l_r = my_rouge.rouge_l_summary_level(new_extract_sents, abstract_sents)
 
-    if Rouge_l_r > max_Rouge_l_r:
+    # modify-yg: 在 LCSTS 中，部分摘要得分为0
+    if Rouge_l_r >= max_Rouge_l_r:
       extract_ids = new_extract_ids
       extract_sents = new_extract_sents
       max_Rouge_l_r = Rouge_l_r
@@ -208,8 +218,10 @@ def get_extract_summary(article_sents, abstract_sents):
 
 
 def write_to_bin(url_file, out_file, makevocab=False):
+  # modify-yg: to-do: we need write a new function to do this with LCSTS
   """Reads the tokenized .story files corresponding to the urls listed in the url_file and writes them to a out_file."""
   print "Making bin file for URLs listed in %s..." % url_file
+  # comment-yg: they use the url_list to separate this dataset into different parts(such as train, eval, test)...
   url_list = read_text_file(url_file)
   url_hashes = get_url_hashes(url_list)
   story_fnames = [s+".story" for s in url_hashes]
@@ -316,7 +328,7 @@ def check_num_stories(stories_dir, num_expected):
 
 
 if __name__ == '__main__':
-   
+
   if len(sys.argv) != 3:
     print "USAGE: python make_datafiles.py <cnn_stories_dir> <dailymail_stories_dir>"
     sys.exit()
