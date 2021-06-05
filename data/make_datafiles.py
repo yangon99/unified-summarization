@@ -208,6 +208,9 @@ def get_extract_summary(article_sents, abstract_sents):
       extract_sents = new_extract_sents
       max_Rouge_l_r = Rouge_l_r
 
+  # modify-yg: 
+  if max_Rouge_l_r == 0:
+    return [], [], 0, [], 0, 0
   # for those articles that don't reach the 2 conditions
   if len(extract_sents) == 0:
     pdb.set_trace()

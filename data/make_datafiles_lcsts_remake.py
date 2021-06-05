@@ -145,6 +145,9 @@ def write_to_bin_lcsts(train_step, out_file):
             # story_file = os.path.join(train_step, s)
             # Get the strings to write to .bin file
             article_sents, abstract_sents, extract_sents, extract_ids, fs, ps, rs, max_Rouge_l_r = get_art_abs("#LCSTS" + s)
+            if max_Rouge_l_r == 0:
+                print "Rouge-l == 0, skip. STEP: %i" % idx
+                continue
             ratio = float(len(extract_sents)) / len(article_sents) if len(article_sents) > 0 else 0
 
             # save scores of all article sentences
