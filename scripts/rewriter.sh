@@ -18,7 +18,8 @@ LOAD_BEST_EVAL_MODEL=False
 CKPT_PATH=''
 
 #################
-MODE='train'
+# MODE='train'
+MODE=$1
 #################
 
 

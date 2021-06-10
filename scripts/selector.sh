@@ -20,7 +20,8 @@ LOAD_BEST_EVAL_MODEL=False
 CKPT_PATH="log/selector/$EXP_NAME/eval/bestmodel-xxxx"
 
 #################
-MODE='train'
+# MODE='train'
+MODE=$1
 #################
 
 
